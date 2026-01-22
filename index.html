@@ -4,9 +4,11 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>核函搜尋工具</title>
+
+  <!-- Font: clearer Traditional Chinese -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 
   <style>
     :root{
@@ -29,92 +31,19 @@
 
       --r:18px;
     }
-/* ===== Readability upgrade (append-only) ===== */
 
-/* 1) 全站字體與字級：更清楚、更穩 */
-body{
-  font-family: "Noto Sans TC", ui-sans-serif, system-ui, -apple-system, "Segoe UI", "PingFang TC", "Microsoft JhengHei", sans-serif;
-  font-size: 16px;
-  line-height: 1.65;
-  letter-spacing: .2px;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-}
-
-/* 2) 標題/次標：層級更明確 */
-.brand h1{ font-size: 30px; }
-.sub{ font-size: 15px; line-height: 1.7; }
-.hd .title{ font-size: 16.5px; }
-.mini{ font-size: 13.5px; }
-
-/* 3) 表單與按鈕：字更清楚、focus 更好辨識 */
-input[type="text"], input[type="date"], button{
-  font-size: 15.5px;
-}
-input[type="text"]:focus, input[type="date"]:focus{
-  box-shadow: 0 0 0 7px rgba(96,165,250,.16);
-}
-button:focus-visible, .tab:focus-visible, #dropzone:focus-visible{
-  outline: none;
-  box-shadow: 0 0 0 7px rgba(96,165,250,.18);
-}
-
-/* 4) 表格：更好讀（字級+行距+欄位視覺穩定） */
-th, td{
-  font-size: 15px;
-  line-height: 1.55;
-}
-th{ letter-spacing: .25px; }
-
-/* 5) 核函號碼/列號：等寬字 + 數字更好辨識 */
-.mono{
-  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace;
-  font-variant-numeric: tabular-nums;
-}
-td.num, th.num{
-  text-align: right;
-  font-variant-numeric: tabular-nums;
-}
-td.code{
-  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace;
-  font-variant-numeric: tabular-nums;
-  letter-spacing: .3px;
-}
-
-/* 6) 狀態膠囊：字更清晰、對齊更好 */
-.statusPill{
-  font-size: 13.5px;
-  padding: 5px 10px;
-  line-height: 1.2;
-  white-space: nowrap;
-}
-
-/* 7) 表格橫向滾動：更好操作 */
-.tableWrap{
-  scrollbar-gutter: stable;
-}
-.tableWrap::-webkit-scrollbar{ height: 10px; width: 10px; }
-.tableWrap::-webkit-scrollbar-thumb{
-  background: rgba(255,255,255,.16);
-  border-radius: 999px;
-}
-.tableWrap::-webkit-scrollbar-thumb:hover{
-  background: rgba(255,255,255,.22);
-}
-
-/* 8) 無障礙：使用者若偏好減少動態，關掉 hover 位移 */
-@media (prefers-reduced-motion: reduce){
-  *{ transition: none !important; }
-  button:hover, .tab:hover, .dropzone:hover{ transform:none !important; }
-}
-
-    
     *{box-sizing:border-box}
+
+    /* ===== Readability / typography (single source of truth) ===== */
     body{
       margin:0;
       color:var(--text);
-      font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", "Noto Sans TC", "PingFang TC", "Microsoft JhengHei", sans-serif;
-      line-height:1.55;
+      font-family: "Noto Sans TC", ui-sans-serif, system-ui, -apple-system, "Segoe UI", "PingFang TC", "Microsoft JhengHei", sans-serif;
+      font-size: 16px;
+      line-height: 1.65;
+      letter-spacing: .2px;
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
 
       background:
         radial-gradient(1200px 600px at 12% 12%, rgba(96,165,250,.28), transparent 58%),
@@ -128,9 +57,10 @@ td.code{
       display:flex;gap:16px;flex-wrap:wrap;align-items:flex-end;
       justify-content:space-between;margin-bottom:14px
     }
+
     .brand h1{
       margin:0;
-      font-size:28px;
+      font-size:30px;
       letter-spacing:.4px;
       font-weight:820;
       background: linear-gradient(90deg, rgba(96,165,250,.98), rgba(167,139,250,.98), rgba(52,211,153,.9));
@@ -142,8 +72,10 @@ td.code{
       margin-top:10px;
       color: rgba(203,213,225,.92);
       font-size:15px;
+      line-height:1.7;
     }
-    .sub .author{opacity:.95;margin-left:10px}
+    .sub .author{opacity:.92;margin-left:10px;font-weight:600}
+
     .pills{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
     .pill{
       display:inline-flex;align-items:center;gap:10px;
@@ -157,7 +89,22 @@ td.code{
       white-space:nowrap;
     }
     .dot{width:10px;height:10px;border-radius:999px;background: linear-gradient(180deg, var(--accent), var(--accent2));}
-    .mono{font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace}
+
+    .mono{
+      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace;
+      font-variant-numeric: tabular-nums;
+    }
+    .num{
+      font-variant-numeric: tabular-nums;
+      text-align:right;
+      display:inline-block;
+      min-width: 2ch;
+    }
+    .code{
+      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace;
+      font-variant-numeric: tabular-nums;
+      letter-spacing:.3px;
+    }
 
     .grid{
       display:grid;grid-template-columns:1.22fr .78fr;gap:16px;
@@ -191,12 +138,12 @@ td.code{
     }
     .hd .title{
       font-weight:800;
-      font-size:16px;
+      font-size:16.5px;
       letter-spacing:.2px;
     }
     .mini{
       color: rgba(203,213,225,.9);
-      font-size:13px;
+      font-size:13.5px;
       display:flex;gap:10px;flex-wrap:wrap;align-items:center;
     }
     .bd{padding:18px}
@@ -251,12 +198,12 @@ td.code{
       background: rgba(0,0,0,.22);
       color: var(--text);
       outline:none;
-      font-size:15px;
+      font-size:15.5px;
     }
     input[type="text"]::placeholder{color: rgba(203,213,225,.72)}
     input[type="text"]:focus, input[type="date"]:focus{
       border-color: rgba(96,165,250,.9);
-      box-shadow: 0 0 0 6px rgba(96,165,250,.14);
+      box-shadow: 0 0 0 7px rgba(96,165,250,.16);
     }
 
     button{
@@ -264,7 +211,7 @@ td.code{
       border-radius: 14px;
       border:1px solid rgba(255,255,255,.16);
       cursor:pointer;
-      font-size:15px;
+      font-size:15.5px;
       font-weight:750;
       transition: .16s ease;
       color: rgba(243,244,246,.96);
@@ -274,6 +221,12 @@ td.code{
     }
     button:hover{ transform: translateY(-1px); background: rgba(255,255,255,.09); }
     button:disabled{ opacity:.55; cursor:not-allowed; transform:none; }
+
+    button:focus-visible, .tab:focus-visible, #dropzone:focus-visible{
+      outline:none;
+      box-shadow: 0 0 0 7px rgba(96,165,250,.18);
+    }
+
     .primary{
       border-color: rgba(255,255,255,.18);
       color:#071022;
@@ -309,7 +262,10 @@ td.code{
       box-shadow: 0 10px 22px rgba(0,0,0,.16);
     }
     .kpi .label{color: rgba(203,213,225,.9);font-size:13px}
-    .kpi .val{font-size:22px;font-weight:900;margin-top:6px;letter-spacing:.2px}
+    .kpi .val{
+      font-size:22px;font-weight:900;margin-top:6px;letter-spacing:.2px;
+      font-variant-numeric: tabular-nums;
+    }
     .kpi .tag{display:inline-block;margin-top:8px;font-size:13px;color: rgba(203,213,225,.82)}
 
     /* Tabs */
@@ -323,6 +279,7 @@ td.code{
       transition:.16s;
       font-size:14px;
       font-weight:750;
+      user-select:none;
     }
     .tab:hover{ transform: translateY(-1px); }
     .tab.active{
@@ -340,12 +297,23 @@ td.code{
       border:1px solid rgba(255,255,255,.14);
       background: rgba(0,0,0,.18);
       box-shadow: inset 0 1px 0 rgba(255,255,255,.06);
+      scrollbar-gutter: stable;
     }
+    .tableWrap::-webkit-scrollbar{ height: 10px; width: 10px; }
+    .tableWrap::-webkit-scrollbar-thumb{
+      background: rgba(255,255,255,.16);
+      border-radius: 999px;
+    }
+    .tableWrap::-webkit-scrollbar-thumb:hover{
+      background: rgba(255,255,255,.22);
+    }
+
     table{width:100%;border-collapse:separate;border-spacing:0}
     th,td{
       padding:12px 12px;
       border-bottom:1px solid rgba(255,255,255,.10);
       font-size:15px;
+      line-height:1.55;
       text-align:left;
       vertical-align:top;
       white-space:nowrap;
@@ -356,19 +324,27 @@ td.code{
       backdrop-filter: blur(12px);
       color: rgba(243,244,246,.96);
       font-weight:900;
-      letter-spacing:.2px;
+      letter-spacing:.25px;
     }
     td{color: rgba(243,244,246,.92)}
     tr:hover td{background: rgba(255,255,255,.04)}
+
     .statusPill{
       display:inline-flex;align-items:center;gap:8px;
-      padding:4px 10px;border-radius:999px;
+      padding:5px 10px;border-radius:999px;
       border:1px solid rgba(255,255,255,.14);
-      font-size:14px;
+      font-size:13.5px;
       font-weight:850;
+      line-height:1.2;
+      white-space:nowrap;
     }
     .statusPill.ok{color: rgba(52,211,153,.98); background: rgba(52,211,153,.12); border-color: rgba(52,211,153,.22)}
     .statusPill.bad{color: rgba(251,113,133,.98); background: rgba(251,113,133,.12); border-color: rgba(251,113,133,.22)}
+
+    @media (prefers-reduced-motion: reduce){
+      *{ transition: none !important; }
+      button:hover, .tab:hover, .dropzone:hover{ transform:none !important; }
+    }
   </style>
 </head>
 
@@ -396,7 +372,7 @@ td.code{
           <div class="mini">欄位：<b>J</b>=核函號碼、<b>L</b>=核函到期、<b>R</b>=入簽/遞補、<b>T</b>=到期日期</div>
         </div>
         <div class="bd">
-          <div id="dropzone" class="dropzone" role="button" aria-label="上傳 Excel">
+          <div id="dropzone" class="dropzone" role="button" aria-label="上傳 Excel" tabindex="0">
             <input id="fileInput" type="file" accept=".xlsx,.xls" />
             <div class="dz-row">
               <div class="dz-ico" aria-hidden="true">
@@ -525,6 +501,9 @@ td.code{
     const fileInput = $("fileInput");
 
     dz.addEventListener("click", () => fileInput.click());
+    dz.addEventListener("keydown", (e)=>{
+      if (e.key === "Enter" || e.key === " ") { e.preventDefault(); fileInput.click(); }
+    });
     dz.addEventListener("dragover", (e)=>{ e.preventDefault(); dz.classList.add("dragover"); });
     dz.addEventListener("dragleave", ()=> dz.classList.remove("dragover"));
     dz.addEventListener("drop", (e)=>{
@@ -703,11 +682,11 @@ td.code{
       if (activeTab === "usable"){
         const data = applySearch(usableRows).map(r=>({
           "狀態": `<span class="statusPill ok">可用</span>`,
-          "核函號碼(J)": escapeHtml(r.khNo),
+          "核函號碼(J)": `<span class="code">${escapeHtml(r.khNo)}</span>`,
           "核函到期(L)": escapeHtml(r.khExpire),
           "入簽/遞補(R)": escapeHtml(r.rVal),
           "到期日期(T)": escapeHtml(r.tExpire),
-          "Excel列號": escapeHtml(r.excelRow),
+          "Excel列號": `<span class="mono num">${escapeHtml(r.excelRow)}</span>`,
           "原因": escapeHtml(r.reason)
         }));
         view.innerHTML = renderTableWithHTML(data, ["狀態","核函號碼(J)","核函到期(L)","入簽/遞補(R)","到期日期(T)","Excel列號","原因"]);
@@ -717,11 +696,11 @@ td.code{
       if (activeTab === "unusable"){
         const data = applySearch(unusableRows).map(r=>({
           "狀態": `<span class="statusPill bad">不可用</span>`,
-          "核函號碼(J)": escapeHtml(r.khNo),
+          "核函號碼(J)": `<span class="code">${escapeHtml(r.khNo)}</span>`,
           "核函到期(L)": escapeHtml(r.khExpire),
           "入簽/遞補(R)": escapeHtml(r.rVal),
           "到期日期(T)": escapeHtml(r.tExpire),
-          "Excel列號": escapeHtml(r.excelRow),
+          "Excel列號": `<span class="mono num">${escapeHtml(r.excelRow)}</span>`,
           "原因": escapeHtml(r.reason)
         }));
         view.innerHTML = renderTableWithHTML(data, ["狀態","核函號碼(J)","核函到期(L)","入簽/遞補(R)","到期日期(T)","Excel列號","原因"]);
@@ -734,8 +713,11 @@ td.code{
         if (q){
           list = list.filter(x => [x.khNo, x.cnt].some(v=> String(v).toLowerCase().includes(q)));
         }
-        const data = list.map(x=>({ "核函號碼": x.khNo, "可用筆數": x.cnt }));
-        view.innerHTML = renderTable(data, ["核函號碼","可用筆數"]);
+        const data = list.map(x=>({
+          "核函號碼": `<span class="code">${escapeHtml(x.khNo)}</span>`,
+          "可用筆數": `<span class="mono num">${escapeHtml(x.cnt)}</span>`
+        }));
+        view.innerHTML = renderTableWithHTML(data, ["核函號碼","可用筆數"]);
         return;
       }
     }
@@ -812,7 +794,12 @@ td.code{
       setStatus(`完成：${uploadedFile.name}（工作表：${sheetName}；資料起始列：第 ${startRowIdx + 1} 列）`);
       $("download").disabled = false;
 
-      bumpUseCount();
+      // bump local counter only after successful analysis
+      const LS_KEY = "kh_tool_use_count_v1";
+      const cur = parseInt(localStorage.getItem(LS_KEY) || "0", 10);
+      localStorage.setItem(LS_KEY, String(cur + 1));
+      $("useCount").textContent = String(cur + 1);
+
       render();
     });
 
@@ -850,4 +837,3 @@ td.code{
   </script>
 </body>
 </html>
-
