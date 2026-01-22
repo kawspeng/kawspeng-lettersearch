@@ -465,6 +465,7 @@
     </div>
   </div>
 
+  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/cpexcel.full.mjs" type="module"></script>
   <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 
   <script>
@@ -748,7 +749,7 @@
       const today = todayStr ? dateOnly(new Date(todayStr)) : dateOnly(new Date());
 
       const buf = await uploadedFile.arrayBuffer();
-      const wb = XLSX.read(buf, { type: "array", cellDates: true });
+      const wb = XLSX.read(buf, { type: "array", cellDates: true, codepage: 950 });
 
       const sheetName = wb.SheetNames[0];
       lastSheetName = sheetName;
@@ -837,3 +838,4 @@
   </script>
 </body>
 </html>
+
