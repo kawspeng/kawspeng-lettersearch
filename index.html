@@ -5,116 +5,346 @@
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>核函可用清單工具</title>
   <style>
-    body{font-family:system-ui,-apple-system,"Segoe UI","Noto Sans TC",sans-serif;margin:24px;line-height:1.5}
-    h1{font-size:22px;margin:0}
-    .muted{color:#666;font-size:14px}
-    .topbar{display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;align-items:flex-end}
-    .badge{display:inline-block;padding:2px 8px;border:1px solid #ddd;border-radius:999px;font-size:12px;color:#333}
-    .card{border:1px solid #ddd;border-radius:14px;padding:18px;margin:14px 0}
-    .row{display:flex;gap:12px;flex-wrap:wrap;align-items:center}
+    :root{
+      --bg:#0b1020;
+      --panel:#0f172a;
+      --card:#0b1226;
+      --card2:#0a1533;
+      --text:#e5e7eb;
+      --muted:#94a3b8;
+      --line:rgba(148,163,184,.18);
+      --accent:#60a5fa;
+      --accent2:#a78bfa;
+      --ok:#34d399;
+      --bad:#fb7185;
+      --warn:#fbbf24;
+      --shadow: 0 12px 30px rgba(0,0,0,.22);
+      --shadow2: 0 8px 18px rgba(0,0,0,.18);
+      --radius:16px;
+    }
+
+    *{box-sizing:border-box}
+    body{
+      margin:0;
+      background: radial-gradient(1200px 600px at 15% 15%, rgba(96,165,250,.18), transparent 55%),
+                  radial-gradient(900px 500px at 80% 0%, rgba(167,139,250,.18), transparent 55%),
+                  linear-gradient(180deg, #070a14 0%, #090d1a 40%, #060814 100%);
+      color:var(--text);
+      font-family: system-ui,-apple-system,"Segoe UI","Noto Sans TC",sans-serif;
+      line-height:1.5;
+    }
+
+    .wrap{max-width:1100px;margin:28px auto;padding:0 16px}
+    .topbar{
+      display:flex; gap:14px; flex-wrap:wrap; align-items:flex-end;
+      justify-content:space-between; margin-bottom:14px
+    }
+    .brand h1{margin:0;font-size:22px;letter-spacing:.2px}
+    .brand .sub{margin-top:6px;color:var(--muted);font-size:13px}
+    .badge{
+      display:inline-flex; align-items:center; gap:8px;
+      padding:6px 10px; border:1px solid var(--line); border-radius:999px;
+      background: rgba(255,255,255,.04); color:var(--muted); font-size:12px
+    }
+    .dot{width:8px;height:8px;border-radius:999px;background:var(--accent)}
+    .actions{display:flex; gap:10px; flex-wrap:wrap; align-items:center}
+
+    .grid{
+      display:grid; grid-template-columns: 1.2fr .8fr; gap:14px;
+    }
+    @media (max-width: 980px){ .grid{grid-template-columns:1fr} }
+
+    .card{
+      border:1px solid var(--line);
+      border-radius: var(--radius);
+      background: linear-gradient(180deg, rgba(255,255,255,.04), rgba(255,255,255,.02));
+      box-shadow: var(--shadow2);
+      overflow:hidden;
+    }
+    .card .hd{
+      padding:14px 16px;
+      border-bottom:1px solid var(--line);
+      display:flex; align-items:center; justify-content:space-between; gap:10px; flex-wrap:wrap;
+      background: rgba(255,255,255,.02);
+    }
+    .card .hd .title{font-weight:650}
+    .card .bd{padding:16px}
+
+    .muted{color:var(--muted);font-size:13px}
+    .mono{font-family: ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
+
+    /* Dropzone */
+    .dropzone{
+      border:1.6px dashed rgba(148,163,184,.45);
+      border-radius: 16px;
+      padding:18px;
+      background: linear-gradient(180deg, rgba(96,165,250,.08), rgba(167,139,250,.05));
+      cursor:pointer;
+      transition: .15s ease;
+    }
+    .dropzone:hover{ transform: translateY(-1px); border-color: rgba(96,165,250,.7); }
+    .dropzone.dragover{
+      border-color: rgba(96,165,250,.95);
+      box-shadow: 0 0 0 4px rgba(96,165,250,.18);
+    }
+    .dropzone input{display:none}
+    .dz-row{display:flex; gap:14px; align-items:flex-start; flex-wrap:wrap}
+    .dz-ico{
+      width:44px;height:44px;border-radius:14px;
+      background: rgba(96,165,250,.16);
+      display:flex;align-items:center;justify-content:center;
+      border:1px solid rgba(96,165,250,.25)
+    }
+    .dz-ico svg{opacity:.95}
+    .dz-main b{font-size:14px}
+    .dz-file{margin-top:6px;color:var(--muted);font-size:13px}
+
+    /* Controls */
+    .row{display:flex; gap:10px; flex-wrap:wrap; align-items:center}
     .spacer{flex:1}
 
-    /* Upload zone */
-    .dropzone{
-      border:2px dashed #bbb;border-radius:16px;padding:28px;text-align:center;
-      cursor:pointer;transition:all .15s;background:#fafafa
+    input[type="text"], input[type="date"]{
+      padding:10px 12px;
+      border-radius: 12px;
+      border:1px solid rgba(148,163,184,.25);
+      background: rgba(0,0,0,.22);
+      color: var(--text);
+      outline:none;
     }
-    .dropzone.dragover{border-color:#111;background:#f0f0f0}
-    .dropzone input{display:none}
-    .dz-title{font-size:16px}
-    .dz-sub{margin-top:6px}
-
-    input[type="text"],input[type="date"]{
-      padding:8px 10px;border:1px solid #ccc;border-radius:10px
+    input[type="text"]::placeholder{color: rgba(148,163,184,.75)}
+    input[type="text"]:focus, input[type="date"]:focus{
+      border-color: rgba(96,165,250,.7);
+      box-shadow: 0 0 0 4px rgba(96,165,250,.14);
     }
 
     button{
-      padding:10px 14px;border:0;border-radius:12px;cursor:pointer;font-size:14px
+      padding:10px 14px;
+      border-radius: 12px;
+      border:1px solid transparent;
+      cursor:pointer;
+      font-size:14px;
+      transition: .15s ease;
+      user-select:none;
+      color:var(--text);
+      background: rgba(255,255,255,.06);
     }
-    button.primary{background:#111;color:#fff}
-    button.secondary{background:#eee}
-    button.ghost{background:transparent;border:1px solid #ddd}
+    button:hover{ transform: translateY(-1px); background: rgba(255,255,255,.08); }
+    button:disabled{ opacity:.55; cursor:not-allowed; transform:none; }
+    .primary{
+      background: linear-gradient(90deg, rgba(96,165,250,.95), rgba(167,139,250,.95));
+      border-color: rgba(255,255,255,.12);
+      color: #081028;
+      font-weight: 700;
+    }
+    .primary:hover{ filter: brightness(1.02); }
+    .ghost{
+      background: transparent;
+      border:1px solid rgba(148,163,184,.25);
+      color: var(--muted);
+    }
 
-    .tabs{display:flex;gap:8px;flex-wrap:wrap;margin-top:4px}
-    .tab{padding:8px 12px;border:1px solid #ddd;border-radius:999px;cursor:pointer}
-    .tab.active{background:#111;color:#fff;border-color:#111}
+    /* KPI */
+    .kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}
+    @media (max-width: 980px){ .kpis{grid-template-columns:repeat(2,1fr)} }
+    .kpi{
+      border:1px solid rgba(148,163,184,.16);
+      border-radius: 14px;
+      padding:12px 12px;
+      background: rgba(0,0,0,.18);
+    }
+    .kpi .label{color:var(--muted);font-size:12px}
+    .kpi .val{font-size:18px;font-weight:750;margin-top:4px}
+    .kpi .tag{display:inline-block;margin-top:6px;font-size:12px;color:var(--muted)}
 
-    table{width:100%;border-collapse:collapse}
-    th,td{border-bottom:1px solid #eee;padding:8px;font-size:14px;text-align:left;vertical-align:top}
-    th{background:#fafafa;position:sticky;top:0;z-index:1}
+    /* Tabs */
+    .tabs{display:flex;gap:10px;flex-wrap:wrap;margin-top:10px}
+    .tab{
+      padding:8px 12px;border-radius:999px;
+      border:1px solid rgba(148,163,184,.2);
+      background: rgba(0,0,0,.18);
+      color: var(--muted);
+      cursor:pointer;
+      transition:.15s;
+      font-size:13px;
+    }
+    .tab.active{
+      color: var(--text);
+      border-color: rgba(96,165,250,.55);
+      background: rgba(96,165,250,.14);
+      box-shadow: 0 0 0 4px rgba(96,165,250,.08);
+    }
 
-    .pill{display:inline-block;padding:2px 8px;border-radius:999px;font-size:12px}
-    .ok{background:#e9f7ef;color:#0b6b2f}
-    .bad{background:#fdecea;color:#9b1c1c}
-    .warn{background:#fff7e6;color:#8a5b00}
-    .kpi{display:flex;gap:16px;flex-wrap:wrap}
-    .kpi b{font-size:18px}
-    .hr{height:1px;background:#eee;margin:12px 0}
-    .note{background:#fbfbfb;border:1px solid #eee;border-radius:12px;padding:12px}
-    .mono{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
+    /* Table */
+    .tableWrap{
+      max-height: 62vh;
+      overflow:auto;
+      border-radius: 14px;
+      border:1px solid rgba(148,163,184,.14);
+      background: rgba(0,0,0,.18);
+    }
+    table{width:100%;border-collapse:separate;border-spacing:0}
+    th,td{
+      padding:10px 10px;
+      border-bottom:1px solid rgba(148,163,184,.12);
+      font-size:13px;
+      text-align:left;
+      vertical-align:top;
+      white-space:nowrap;
+    }
+    th{
+      position:sticky; top:0; z-index:1;
+      background: rgba(15,23,42,.75);
+      backdrop-filter: blur(10px);
+      color: rgba(229,231,235,.9);
+      font-weight:650;
+    }
+    td{color: rgba(229,231,235,.88)}
+    tr:hover td{background: rgba(255,255,255,.03)}
+    .pill{
+      display:inline-flex;align-items:center;gap:6px;
+      padding:2px 8px;border-radius:999px;
+      border:1px solid rgba(148,163,184,.18);
+      font-size:12px;
+    }
+    .pill.ok{color: rgba(52,211,153,.95); background: rgba(52,211,153,.10); border-color: rgba(52,211,153,.20)}
+    .pill.bad{color: rgba(251,113,133,.95); background: rgba(251,113,133,.10); border-color: rgba(251,113,133,.20)}
+    .hint{
+      margin-top:10px;
+      padding:10px 12px;
+      border-radius: 14px;
+      border:1px solid rgba(148,163,184,.14);
+      background: rgba(0,0,0,.18);
+      color: var(--muted);
+      font-size:13px;
+    }
+    .mini{
+      display:flex; gap:10px; flex-wrap:wrap; align-items:center;
+      color: var(--muted); font-size:12px;
+    }
+    .mini b{color:var(--text)}
+    a{color:inherit}
   </style>
 </head>
 
 <body>
-  <div class="topbar">
-    <div>
-      <h1>鎵興｜核函可用清單工具 <span class="badge">正式版 v1.1</span></h1>
-      <div class="muted">純前端運作：Excel 只在瀏覽器解析，不上傳、不留存。</div>
-    </div>
-    <div class="row">
-      <div class="muted">本機使用次數：<span id="useCount" class="mono">0</span></div>
-      <button id="resetCount" class="ghost" title="僅清除本機瀏覽器計數">清除計數</button>
-    </div>
-  </div>
-
-  <div class="card">
-    <div id="dropzone" class="dropzone" role="button" aria-label="上傳 Excel">
-      <input id="fileInput" type="file" accept=".xlsx,.xls" />
-      <div class="dz-title"><b>拖曳 Excel 檔案到此</b></div>
-      <div class="muted dz-sub">或點擊此區選擇檔案（支援 .xlsx / .xls）</div>
-      <div id="picked" class="muted" style="margin-top:8px"></div>
+  <div class="wrap">
+    <div class="topbar">
+      <div class="brand">
+        <h1>鎵興｜核函可用清單工具</h1>
+        <div class="sub">純前端運作：Excel 只在瀏覽器解析，不上傳、不留存。</div>
+      </div>
+      <div class="actions">
+        <span class="badge"><span class="dot"></span>正式版 v1.2</span>
+        <span class="badge">本機使用次數：<span id="useCount" class="mono">0</span></span>
+        <button id="resetCount" class="ghost">清除計數</button>
+      </div>
     </div>
 
-    <div class="row" style="margin-top:14px">
-      <label class="muted">今日日期</label>
-      <input id="today" type="date" />
-      <input id="q" type="text" placeholder="搜尋：核函號碼 / 入簽函 / 遞補函 / 原因…" style="min-width:320px" />
-      <div class="spacer"></div>
-      <button id="analyze" class="primary">分析</button>
-      <button id="download" class="secondary" disabled>下載結果（選用）</button>
+    <div class="grid">
+      <!-- Left: Upload + Controls -->
+      <div class="card">
+        <div class="hd">
+          <div class="title">上傳與分析</div>
+          <div class="mini">
+            <span>欄位：<b>J</b>=核函號碼、<b>L</b>=核函到期、<b>R</b>=入簽/遞補、<b>T</b>=到期日期</span>
+          </div>
+        </div>
+        <div class="bd">
+          <div id="dropzone" class="dropzone" role="button" aria-label="上傳 Excel">
+            <input id="fileInput" type="file" accept=".xlsx,.xls" />
+            <div class="dz-row">
+              <div class="dz-ico" aria-hidden="true">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
+                  <path d="M12 3v10m0 0l-4-4m4 4l4-4" stroke="rgba(229,231,235,.9)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                  <path d="M5 15v3a3 3 0 003 3h8a3 3 0 003-3v-3" stroke="rgba(229,231,235,.65)" stroke-width="2" stroke-linecap="round"/>
+                </svg>
+              </div>
+              <div class="dz-main">
+                <b>拖曳 Excel 檔案到此</b>
+                <div class="muted">或點擊選擇檔案（支援 .xlsx / .xls）</div>
+                <div id="picked" class="dz-file"></div>
+              </div>
+            </div>
+          </div>
+
+          <div class="row" style="margin-top:12px">
+            <label class="muted">今日日期</label>
+            <input id="today" type="date" />
+            <div class="spacer"></div>
+            <button id="analyze" class="primary">分析</button>
+            <button id="download" class="ghost" disabled>下載結果（選用）</button>
+          </div>
+
+          <div id="status" class="hint">尚未分析</div>
+
+          <div class="hint">
+            規則：R 含「逾期」→ 不可用；若 T 有日期則以 T 判斷是否到期（優先於 L）；T 無日期則以 L 判斷。
+            資料起始列採自動偵測：找出第一筆 J 欄看起來像核函號碼後開始讀取。
+          </div>
+        </div>
+      </div>
+
+      <!-- Right: KPIs + Search -->
+      <div class="card">
+        <div class="hd">
+          <div class="title">結果概覽</div>
+          <div class="mini">搜尋會套用到目前分頁</div>
+        </div>
+        <div class="bd">
+          <div class="kpis">
+            <div class="kpi">
+              <div class="label">可用</div>
+              <div class="val" id="kpiUsable">0</div>
+              <div class="tag">依規則判斷</div>
+            </div>
+            <div class="kpi">
+              <div class="label">不可用</div>
+              <div class="val" id="kpiUnusable">0</div>
+              <div class="tag">逾期/到期</div>
+            </div>
+            <div class="kpi">
+              <div class="label">核函數</div>
+              <div class="val" id="kpiKh">0</div>
+              <div class="tag">以核函號碼彙總</div>
+            </div>
+            <div class="kpi">
+              <div class="label">資料起始列</div>
+              <div class="val" id="kpiStart">-</div>
+              <div class="tag">自動偵測</div>
+            </div>
+          </div>
+
+          <div class="row" style="margin-top:12px">
+            <input id="q" type="text" placeholder="搜尋：核函號碼 / 入簽函 / 遞補函 / 原因…" style="width:100%" />
+          </div>
+
+          <div class="hint" style="margin-top:12px">
+            小技巧：可直接複製表格內容，或按「下載結果」匯出 Excel（選用）。
+          </div>
+        </div>
+      </div>
     </div>
 
-    <div id="status" class="muted" style="margin-top:10px"></div>
-
-    <div class="hr"></div>
-
-    <div class="kpi">
-      <div class="muted">可用：<b id="kpiUsable">0</b></div>
-      <div class="muted">不可用：<b id="kpiUnusable">0</b></div>
-      <div class="muted">核函數：<b id="kpiKh">0</b></div>
-      <div class="muted">資料起始列：<b id="kpiStart">-</b></div>
+    <div class="tabs">
+      <div class="tab active" data-tab="usable">可用清單</div>
+      <div class="tab" data-tab="unusable">不可用</div>
+      <div class="tab" data-tab="summary">核函彙總</div>
     </div>
 
-    <div class="note" style="margin-top:12px">
-      <div class="muted">
-        規則：R 含「逾期」→ 不可用；若 T 有日期則以 T 判斷是否到期（優先於 L）；T 無日期則以 L 判斷。
-        推薦排序：同核函號碼優先 <b>T 到期最晚</b>，若無 T 則以 <b>L 到期最晚</b>。
+    <div class="card">
+      <div class="hd">
+        <div class="title" id="tableTitle">可用清單</div>
+        <div class="mini" id="tableMeta">尚未分析</div>
+      </div>
+      <div class="bd">
+        <div class="tableWrap">
+          <div id="view" class="muted" style="padding:14px">尚未分析</div>
+        </div>
       </div>
     </div>
   </div>
 
-  <div class="tabs">
-    <div class="tab active" data-tab="recommended">推薦可用</div>
-    <div class="tab" data-tab="usable">可用清單</div>
-    <div class="tab" data-tab="unusable">不可用</div>
-    <div class="tab" data-tab="summary">核函彙總</div>
-  </div>
-
-  <div class="card" style="max-height:60vh;overflow:auto">
-    <div id="view"></div>
-  </div>
-
-  <!-- SheetJS (xlsx) -->
+  <!-- SheetJS -->
   <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 
   <script>
@@ -127,9 +357,9 @@
     let usableRows = [];
     let unusableRows = [];
     let summaryRows = [];
-    let recommendedRows = [];
-    let activeTab = "recommended";
+    let activeTab = "usable";
     let lastStartRow = null;
+    let lastSheetName = null;
 
     const $ = (id) => document.getElementById(id);
 
@@ -148,12 +378,11 @@
       $("today").value = `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`;
     })();
 
-    // ===== 上傳區：點擊＋拖曳 =====
+    // ===== 上傳：點擊＋拖曳 =====
     const dz = $("dropzone");
     const fileInput = $("fileInput");
 
     dz.addEventListener("click", () => fileInput.click());
-
     dz.addEventListener("dragover", (e)=>{ e.preventDefault(); dz.classList.add("dragover"); });
     dz.addEventListener("dragleave", ()=> dz.classList.remove("dragover"));
     dz.addEventListener("drop", (e)=>{
@@ -161,13 +390,12 @@
       dz.classList.remove("dragover");
       if (e.dataTransfer.files?.length) setFile(e.dataTransfer.files[0]);
     });
-
     fileInput.addEventListener("change", ()=>{
       if (fileInput.files?.length) setFile(fileInput.files[0]);
     });
 
-    function setStatus(msg){ $("status").textContent = msg; }
-    function setPicked(msg){ $("picked").textContent = msg; }
+    function setPicked(msg){ $("picked").textContent = msg || ""; }
+    function setStatus(msg){ $("status").textContent = msg || ""; }
 
     function setFile(file){
       if (!file || !file.name.match(/\.(xlsx|xls)$/i)){
@@ -175,7 +403,7 @@
         return;
       }
       uploadedFile = file;
-      setPicked(`已選擇檔案：${file.name}`);
+      setPicked(`已選擇：${file.name}`);
       setStatus("已載入檔案，請按「分析」。");
     }
 
@@ -188,7 +416,6 @@
     }
 
     function parseMinguoDate(val){
-      // 支援：114/10/07、1150730、YYYYMMDD、Date
       if (val === null || val === undefined) return null;
       if (val instanceof Date && !Number.isNaN(val.getTime())) return val;
 
@@ -227,7 +454,6 @@
     }
 
     function dateOnly(d){ return new Date(d.getFullYear(), d.getMonth(), d.getDate()); }
-
     function fmtDate(d){
       if (!d) return "";
       const pad = (n) => String(n).padStart(2,"0");
@@ -273,7 +499,7 @@
       return 0;
     }
 
-    // ===== 彙總與推薦 =====
+    // ===== 彙總 =====
     function buildSummary(usable){
       const map = new Map();
       for (const r of usable){
@@ -285,59 +511,16 @@
         .sort((a,b)=> b.可用筆數 - a.可用筆數 || String(a.核函號碼).localeCompare(String(b.核函號碼)));
     }
 
-    function effectiveExpireDateObj(r){
-      // 有 T 用 T，否則用 L（推薦排序的依據）
-      const t = parseMinguoDate(r.rawT);
-      const l = parseMinguoDate(r.rawL);
-      return t || l || null;
-    }
-
-    function buildRecommended(usable){
-      // 同核函號碼挑一筆「最推薦」：有效到期日最晚優先
-      const best = new Map();
-      for (const r of usable){
-        const key = String(r.khNo ?? "");
-        const cur = best.get(key);
-        if (!cur){
-          best.set(key, r);
-          continue;
-        }
-        const a = effectiveExpireDateObj(r);
-        const b = effectiveExpireDateObj(cur);
-        const at = a ? a.getTime() : -1;
-        const bt = b ? b.getTime() : -1;
-        if (at > bt) best.set(key, r);
-      }
-
-      const list = Array.from(best.values()).map(r=>{
-        const eff = effectiveExpireDateObj(r);
-        const basis = parseMinguoDate(r.rawT) ? "T" : "L";
-        return {
-          ...r,
-          effExpire: fmtDate(eff),
-          effBasis: basis
-        };
-      });
-
-      // 全域排序：到期日越晚越前；同日再以核函號碼排序
-      list.sort((x,y)=>{
-        const xt = parseMinguoDate(x.effExpire)?.getTime() ?? -1;
-        const yt = parseMinguoDate(y.effExpire)?.getTime() ?? -1;
-        if (yt !== xt) return yt - xt;
-        return String(x.khNo).localeCompare(String(y.khNo));
-      });
-
-      // 加順位
-      return list.map((r, idx)=> ({...r, rank: idx + 1}));
-    }
-
-    // ===== 渲染 =====
+    // ===== 表格渲染 =====
     function escapeHtml(s){
-      return String(s ?? "").replaceAll("&","&amp;").replaceAll("<","&lt;").replaceAll(">","&gt;");
+      return String(s ?? "")
+        .replaceAll("&","&amp;")
+        .replaceAll("<","&lt;")
+        .replaceAll(">","&gt;");
     }
 
     function renderTableWithHTML(data, columns){
-      if (!data.length) return `<div class="muted">無資料</div>`;
+      if (!data.length) return `<div class="muted" style="padding:14px">無資料</div>`;
       const th = columns.map(c=>`<th>${escapeHtml(c)}</th>`).join("");
       const trs = data.map(r=>{
         const tds = columns.map(c=>`<td>${r[c] ?? ""}</td>`).join("");
@@ -347,7 +530,7 @@
     }
 
     function renderTable(data, columns){
-      if (!data.length) return `<div class="muted">無資料</div>`;
+      if (!data.length) return `<div class="muted" style="padding:14px">無資料</div>`;
       const th = columns.map(c=>`<th>${escapeHtml(c)}</th>`).join("");
       const trs = data.map(r=>{
         const tds = columns.map(c=>`<td>${escapeHtml(r[c] ?? "")}</td>`).join("");
@@ -356,35 +539,30 @@
       return `<table><thead><tr>${th}</tr></thead><tbody>${trs}</tbody></table>`;
     }
 
+    // ===== 搜尋（套用目前分頁）=====
     function applySearch(list){
       const q = $("q").value.trim().toLowerCase();
       if (!q) return list;
       return list.filter(r=>{
         return [
           r.khNo, r.khExpire, r.rVal, r.tExpire, r.status, r.reason,
-          r.effExpire, r.effBasis, r.rank
+          r.excelRow
         ].some(x => String(x ?? "").toLowerCase().includes(q));
       });
     }
 
-    function render(){
-      const view = $("view");
+    function setTableHeader(){
+      const titleMap = { usable:"可用清單", unusable:"不可用", summary:"核函彙總" };
+      $("tableTitle").textContent = titleMap[activeTab] || "結果";
+      const meta = [];
+      if (lastSheetName) meta.push(`工作表：${lastSheetName}`);
+      if (lastStartRow !== null) meta.push(`資料起始列：第 ${lastStartRow + 1} 列`);
+      $("tableMeta").textContent = meta.length ? meta.join(" ｜ ") : "尚未分析";
+    }
 
-      if (activeTab === "recommended"){
-        const data = applySearch(recommendedRows).map(r=>({
-          "推薦順位": `<span class="pill warn">${r.rank}</span>`,
-          "核函號碼(J)": escapeHtml(r.khNo),
-          "有效到期日": escapeHtml(r.effExpire),
-          "依據": `<span class="badge">${escapeHtml(r.effBasis)}</span>`,
-          "入簽/遞補(R)": escapeHtml(r.rVal),
-          "R到期(T)": escapeHtml(r.tExpire),
-          "核函到期(L)": escapeHtml(r.khExpire),
-          "Excel列號": escapeHtml(r.excelRow),
-          "原因": escapeHtml(r.reason)
-        }));
-        view.innerHTML = renderTableWithHTML(data, ["推薦順位","核函號碼(J)","有效到期日","依據","入簽/遞補(R)","R到期(T)","核函到期(L)","Excel列號","原因"]);
-        return;
-      }
+    function render(){
+      setTableHeader();
+      const view = $("view");
 
       if (activeTab === "usable"){
         const data = applySearch(usableRows).map(r=>({
@@ -415,8 +593,13 @@
       }
 
       if (activeTab === "summary"){
-        const data = applySearch(summaryRows.map(s=>({ khNo: s.核函號碼, cnt: s.可用筆數 })))
-          .map(x=>({ "核函號碼": x.khNo, "可用筆數": x.cnt }));
+        // summaryRows 結構是 {核函號碼, 可用筆數}；搜尋沿用 applySearch 需轉形
+        const q = $("q").value.trim().toLowerCase();
+        let list = summaryRows.map(s=>({ khNo:s.核函號碼, cnt:s.可用筆數 }));
+        if (q){
+          list = list.filter(x => [x.khNo, x.cnt].some(v=> String(v).toLowerCase().includes(q)));
+        }
+        const data = list.map(x=>({ "核函號碼": x.khNo, "可用筆數": x.cnt }));
         view.innerHTML = renderTable(data, ["核函號碼","可用筆數"]);
         return;
       }
@@ -452,6 +635,7 @@
       const wb = XLSX.read(buf, { type: "array", cellDates: true });
 
       const sheetName = wb.SheetNames[0];
+      lastSheetName = sheetName;
       const ws = wb.Sheets[sheetName];
 
       const aoa = XLSX.utils.sheet_to_json(ws, { header: 1, blankrows: false, defval: null });
@@ -478,27 +662,23 @@
           rVal: R ?? "",
           tExpire: fmtDate(parseMinguoDate(T)),
           status: judged.status,
-          reason: judged.reason,
-          // 保留原始值給推薦判斷
-          rawL: L,
-          rawT: T
+          reason: judged.reason
         });
       }
 
       usableRows = rows.filter(r=>r.status==="可用");
       unusableRows = rows.filter(r=>r.status!=="可用");
       summaryRows = buildSummary(usableRows);
-      recommendedRows = buildRecommended(usableRows);
 
       $("kpiUsable").textContent = String(usableRows.length);
       $("kpiUnusable").textContent = String(unusableRows.length);
       $("kpiKh").textContent = String(summaryRows.length);
-      $("kpiStart").textContent = startRowIdx !== null ? `第 ${startRowIdx + 1} 列` : "-";
+      $("kpiStart").textContent = `第 ${startRowIdx + 1} 列`;
 
       setStatus(`完成：${uploadedFile.name}（工作表：${sheetName}；資料起始列：第 ${startRowIdx + 1} 列）`);
       $("download").disabled = false;
 
-      bumpUseCount(); // 記一次使用（只在本機）
+      bumpUseCount();
       render();
     });
 
@@ -526,20 +706,7 @@
         "原因": r.reason
       }));
 
-      const rec = recommendedRows.map(r=>({
-        "推薦順位": r.rank,
-        "核函號碼(J)": r.khNo,
-        "有效到期日": r.effExpire,
-        "依據": r.effBasis,
-        "入簽/遞補(R)": r.rVal,
-        "R到期(T)": r.tExpire,
-        "核函到期(L)": r.khExpire,
-        "Excel列號": r.excelRow,
-        "原因": r.reason
-      }));
-
       const wb = XLSX.utils.book_new();
-      XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(rec), "推薦可用");
       XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(summaryRows), "核函彙總");
       XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(usable), "可用清單");
       XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(all), "全部判斷");
