@@ -693,7 +693,7 @@ function isActuallyUsedByWorker(nameVal){
       const q = $("q").value.trim().toLowerCase();
       if (!q) return list;
       return list.filter(r=>{
-        return [r.khNo, r.khExpire, r.rVal, r.tExpire, r.status, r.reason, r.excelRow]
+        return [r.khNo, r.khExpire, r.rVal, r.tExpire, r.status, r.reason, r.workerName, r.excelRow]
           .some(x => String(x ?? "").toLowerCase().includes(q));
       });
     }
@@ -726,16 +726,28 @@ function isActuallyUsedByWorker(nameVal){
       }
 
       if (activeTab === "unusable"){
-        const data = applySearch(unusableRows).map(r=>({
-          "狀態": `<span class="statusPill bad">不可用</span>`,
-          "核函號碼(J)": `<span class="code">${escapeHtml(r.khNo)}</span>`,
-          "核函到期(L)": escapeHtml(r.khExpire),
-          "入簽/遞補(R)": escapeHtml(r.rVal),
-          "到期日期(T)": escapeHtml(r.tExpire),
-          "Excel列號": `<span class="mono num">${escapeHtml(r.excelRow)}</span>`,
-          "原因": escapeHtml(r.reason)
-        }));
-        view.innerHTML = renderTableWithHTML(data, ["狀態","核函號碼(J)","核函到期(L)","入簽/遞補(R)","到期日期(T)","Excel列號","原因"]);
+        const data = applySearch(unusableRows).map(r=>{
+  const showName =
+    r.reason && r.reason.includes("移工使用")
+      ? (r.workerName ?? "")
+      : "";
+
+  return {
+    "狀態": `<span class="statusPill bad">不可用</span>`,
+    "核函號碼(J)": `<span class="code">${escapeHtml(r.khNo)}</span>`,
+    "核函到期(L)": escapeHtml(r.khExpire),
+    "入簽/遞補(R)": escapeHtml(r.rVal),
+    "移工姓名": escapeHtml(showName),
+    "到期日期(T)": escapeHtml(r.tExpire),
+    "Excel列號": `<span class="mono num">${escapeHtml(r.excelRow)}</span>`,
+    "原因": escapeHtml(r.reason)
+  };
+});
+
+view.innerHTML = renderTableWithHTML(
+  data,
+  ["狀態","核函號碼(J)","核函到期(L)","入簽/遞補(R)","移工姓名","到期日期(T)","Excel列號","原因"]
+);
         return;
       }
 
@@ -806,15 +818,16 @@ function isActuallyUsedByWorker(nameVal){
         const judged = judgeUsable(L, R, T, today, workerName);
 
         rows.push({
-          excelRow: i + 1,
-          khNo: khNo ?? "",
-          khExpire: fmtDate(parseMinguoDate(L)),
-          rVal: R ?? "",
-          tExpire: fmtDate(parseMinguoDate(T)),
-          status: judged.status,
-          reason: judged.reason
-        });
-      }
+  excelRow: i + 1,
+  khNo: khNo ?? "",
+  khExpire: fmtDate(parseMinguoDate(L)),
+  rVal: R ?? "",
+  workerName: workerName ?? "",
+  tExpire: fmtDate(parseMinguoDate(T)),
+  status: judged.status,
+  reason: judged.reason
+});
+
 
       usableRows = rows.filter(r=>r.status==="可用");
       unusableRows = rows.filter(r=>r.status!=="可用");
@@ -871,5 +884,6 @@ function isActuallyUsedByWorker(nameVal){
   </script>
 </body>
 </html>
+
 
 
