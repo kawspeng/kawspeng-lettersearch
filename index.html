@@ -34,7 +34,6 @@
 
     *{box-sizing:border-box}
 
-    /* ===== Readability / typography (single source of truth) ===== */
     body{
       margin:0;
       color:var(--text);
@@ -46,7 +45,7 @@
       -moz-osx-font-smoothing: grayscale;
 
       background:
-        radial-gradient(1200px 600px at 12% 12%, rgba(96,165,250,.28), transparent 58%),
+        radial-gradient(1200px 600pxrow at 12% 12%, rgba(96,165,250,.28), transparent 58%),
         radial-gradient(900px 520px at 82% 5%, rgba(167,139,250,.26), transparent 60%),
         radial-gradient(900px 520px at 82% 92%, rgba(52,211,153,.14), transparent 62%),
         linear-gradient(180deg, var(--bg1) 0%, var(--bg2) 45%, #040612 100%);
@@ -299,14 +298,6 @@
       box-shadow: inset 0 1px 0 rgba(255,255,255,.06);
       scrollbar-gutter: stable;
     }
-    .tableWrap::-webkit-scrollbar{ height: 10px; width: 10px; }
-    .tableWrap::-webkit-scrollbar-thumb{
-      background: rgba(255,255,255,.16);
-      border-radius: 999px;
-    }
-    .tableWrap::-webkit-scrollbar-thumb:hover{
-      background: rgba(255,255,255,.22);
-    }
 
     table{width:100%;border-collapse:separate;border-spacing:0}
     th,td{
@@ -401,7 +392,7 @@
 
           <div class="hint">
             <strong>判斷規則</strong>：R 含「逾期」→ 不可用；若 T 有日期則以 T 判斷是否到期（優先於 L）；T 無日期則以 L 判斷。
-            <br><strong>起始列</strong>：自動偵測第一筆 J 欄看起來像核函號碼後開始讀取。
+            <br><strong>新增規則</strong>：若「移工姓名」有值且不是「未使用」→ 視為已被使用，排除於可用清單。
           </div>
         </div>
       </div>
@@ -421,7 +412,7 @@
             <div class="kpi">
               <div class="label">不可用</div>
               <div class="val" id="kpiUnusable">0</div>
-              <div class="tag">逾期/到期</div>
+              <div class="tag">逾期/到期/已使用</div>
             </div>
             <div class="kpi">
               <div class="label">核函數</div>
@@ -436,7 +427,7 @@
           </div>
 
           <div class="row" style="margin-top:14px">
-            <input id="q" type="text" placeholder="搜尋：核函號碼 / 入簽函 / 遞補函 / 原因…" style="width:100%" />
+            <input id="q" type="text" placeholder="搜尋：核函號碼 / 移工姓名 / 原因…" style="width:100%" />
           </div>
 
           <div class="hint" style="margin-top:14px">
@@ -465,7 +456,8 @@
     </div>
   </div>
 
-  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/cpexcel.full.mjs" type="module"></script>
+  <!-- 重要：cpexcel 要用「非 module」版本，才能讓 XLSX 讀 .xls 的 codepage 生效 -->
+  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/cpexcel.full.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 
   <script>
@@ -529,6 +521,31 @@
       setStatus("已載入檔案，請按「開始分析」。");
     }
 
+    // ===== 新增：自動找「移工姓名」欄 + 判斷是否已被使用 =====
+    function findColumnIndexByHeader(aoa, headerText){
+      const target = String(headerText).trim();
+      const maxRows = Math.min(30, aoa.length);
+      for (let r = 0; r < maxRows; r++){
+        const row = aoa[r] || [];
+        for (let c = 0; c < row.length; c++){
+          const v = row[c];
+          if (v === null || v === undefined) continue;
+          const s = String(v).trim();
+          if (s === target || s.includes(target)) return c;
+        }
+      }
+      return null;
+    }
+
+    function isActuallyUsedByWorker(nameVal){
+      // 只要包含「未使用」都視為仍可用名額（例如：未使用3人）
+      if (nameVal === null || nameVal === undefined) return false;
+      const s = String(nameVal).trim();
+      if (!s) return false;
+      if (s.includes("未使用")) return false;
+      return true; // 有內容且不是「未使用」 => 視為已被移工使用
+    }
+
     // Date parsing
     function toDateISO(yyyy, mm, dd){
       const d = new Date(yyyy, mm-1, dd);
@@ -586,25 +603,24 @@
     }
 
     function judgeUsable(L, R, T, today, workerName){
-  // 新增規則：移工姓名有值且不是「未使用」 => 直接排除
-  if (isActuallyUsedByWorker(workerName)){
-    return { status: "不可用", reason: "已被移工使用（移工姓名有值）" };
-  }
+      // 新增規則：移工姓名有值且不是「未使用」 => 直接排除
+      if (isActuallyUsedByWorker(workerName)){
+        return { status: "不可用", reason: "已被移工使用（移工姓名有值）" };
+      }
 
-  if (isOverdueR(R)) return { status: "不可用", reason: "R欄標示逾期" };
+      if (isOverdueR(R)) return { status: "不可用", reason: "R欄標示逾期" };
 
-  const Ld = parseMinguoDate(L);
-  const Td = parseMinguoDate(T);
+      const Ld = parseMinguoDate(L);
+      const Td = parseMinguoDate(T);
 
-  if (Td){
-    if (dateOnly(Td) >= today) return { status: "可用", reason: "T欄未到期" };
-    return { status: "不可用", reason: "T欄已到期" };
-  }
+      if (Td){
+        if (dateOnly(Td) >= today) return { status: "可用", reason: "T欄未到期" };
+        return { status: "不可用", reason: "T欄已到期" };
+      }
 
-  if (Ld && dateOnly(Ld) >= today) return { status: "可用", reason: "L欄未到期" };
-  return { status: "不可用", reason: "L欄已到期或無有效日期" };
-}
-
+      if (Ld && dateOnly(Ld) >= today) return { status: "可用", reason: "L欄未到期" };
+      return { status: "不可用", reason: "L欄已到期或無有效日期" };
+    }
 
     // Auto detect start row
     function looksLikeKhNo(v){
@@ -622,32 +638,7 @@
       }
       return 0;
     }
-// ===== 新增：自動找「移工姓名」欄 + 判斷是否已被使用 =====
-function findColumnIndexByHeader(aoa, headerText){
-  const target = String(headerText).trim();
-  const maxRows = Math.min(30, aoa.length);
-  for (let r = 0; r < maxRows; r++){
-    const row = aoa[r] || [];
-    for (let c = 0; c < row.length; c++){
-      const v = row[c];
-      if (v === null || v === undefined) continue;
-      const s = String(v).trim();
-      if (s === target || s.includes(target)) return c;
-    }
-  }
-  return null;
-}
 
-function isActuallyUsedByWorker(nameVal){
-  // 只要包含「未使用」都視為仍可用名額（例如：未使用3人）
-  if (nameVal === null || nameVal === undefined) return false;
-  const s = String(nameVal).trim();
-  if (!s) return false;
-  if (s.includes("未使用")) return false;
-  return true; // 有內容且不是「未使用」 => 視為已被移工使用
-}
-
-    
     // Summary
     function buildSummary(usable){
       const map = new Map();
@@ -673,16 +664,6 @@ function isActuallyUsedByWorker(nameVal){
       const th = columns.map(c=>`<th>${escapeHtml(c)}</th>`).join("");
       const trs = data.map(r=>{
         const tds = columns.map(c=>`<td>${r[c] ?? ""}</td>`).join("");
-        return `<tr>${tds}</tr>`;
-      }).join("");
-      return `<table><thead><tr>${th}</tr></thead><tbody>${trs}</tbody></table>`;
-    }
-
-    function renderTable(data, columns){
-      if (!data.length) return `<div class="muted" style="padding:16px">無資料</div>`;
-      const th = columns.map(c=>`<th>${escapeHtml(c)}</th>`).join("");
-      const trs = data.map(r=>{
-        const tds = columns.map(c=>`<td>${escapeHtml(r[c] ?? "")}</td>`).join("");
         return `<tr>${tds}</tr>`;
       }).join("");
       return `<table><thead><tr>${th}</tr></thead><tbody>${trs}</tbody></table>`;
@@ -721,33 +702,36 @@ function isActuallyUsedByWorker(nameVal){
           "Excel列號": `<span class="mono num">${escapeHtml(r.excelRow)}</span>`,
           "原因": escapeHtml(r.reason)
         }));
-        view.innerHTML = renderTableWithHTML(data, ["狀態","核函號碼(J)","核函到期(L)","入簽/遞補(R)","到期日期(T)","Excel列號","原因"]);
+        view.innerHTML = renderTableWithHTML(
+          data,
+          ["狀態","核函號碼(J)","核函到期(L)","入簽/遞補(R)","到期日期(T)","Excel列號","原因"]
+        );
         return;
       }
 
       if (activeTab === "unusable"){
         const data = applySearch(unusableRows).map(r=>{
-  const showName =
-    r.reason && r.reason.includes("移工使用")
-      ? (r.workerName ?? "")
-      : "";
+          const showName =
+            r.reason && r.reason.includes("移工使用")
+              ? (r.workerName ?? "")
+              : "";
 
-  return {
-    "狀態": `<span class="statusPill bad">不可用</span>`,
-    "核函號碼(J)": `<span class="code">${escapeHtml(r.khNo)}</span>`,
-    "核函到期(L)": escapeHtml(r.khExpire),
-    "入簽/遞補(R)": escapeHtml(r.rVal),
-    "移工姓名": escapeHtml(showName),
-    "到期日期(T)": escapeHtml(r.tExpire),
-    "Excel列號": `<span class="mono num">${escapeHtml(r.excelRow)}</span>`,
-    "原因": escapeHtml(r.reason)
-  };
-});
+          return {
+            "狀態": `<span class="statusPill bad">不可用</span>`,
+            "核函號碼(J)": `<span class="code">${escapeHtml(r.khNo)}</span>`,
+            "核函到期(L)": escapeHtml(r.khExpire),
+            "入簽/遞補(R)": escapeHtml(r.rVal),
+            "移工姓名": escapeHtml(showName),
+            "到期日期(T)": escapeHtml(r.tExpire),
+            "Excel列號": `<span class="mono num">${escapeHtml(r.excelRow)}</span>`,
+            "原因": escapeHtml(r.reason)
+          };
+        });
 
-view.innerHTML = renderTableWithHTML(
-  data,
-  ["狀態","核函號碼(J)","核函到期(L)","入簽/遞補(R)","移工姓名","到期日期(T)","Excel列號","原因"]
-);
+        view.innerHTML = renderTableWithHTML(
+          data,
+          ["狀態","核函號碼(J)","核函到期(L)","入簽/遞補(R)","移工姓名","到期日期(T)","Excel列號","原因"]
+        );
         return;
       }
 
@@ -812,22 +796,22 @@ view.innerHTML = renderTableWithHTML(
         const T = row[COL.T];
         const workerName = (workerNameCol !== null) ? row[workerNameCol] : null;
 
-        const isAllEmpty = [khNo,L,R,T].every(v => v === null || v === undefined || String(v).trim() === "");
+        const isAllEmpty = [khNo,L,R,T,workerName].every(v => v === null || v === undefined || String(v).trim() === "");
         if (isAllEmpty) continue;
 
         const judged = judgeUsable(L, R, T, today, workerName);
 
         rows.push({
-  excelRow: i + 1,
-  khNo: khNo ?? "",
-  khExpire: fmtDate(parseMinguoDate(L)),
-  rVal: R ?? "",
-  workerName: workerName ?? "",
-  tExpire: fmtDate(parseMinguoDate(T)),
-  status: judged.status,
-  reason: judged.reason
-});
-
+          excelRow: i + 1,
+          khNo: khNo ?? "",
+          khExpire: fmtDate(parseMinguoDate(L)),
+          rVal: R ?? "",
+          workerName: workerName ?? "",
+          tExpire: fmtDate(parseMinguoDate(T)),
+          status: judged.status,
+          reason: judged.reason
+        });
+      } // ✅ 這個 } 你原本漏掉了，導致整段壞掉
 
       usableRows = rows.filter(r=>r.status==="可用");
       unusableRows = rows.filter(r=>r.status!=="可用");
@@ -841,12 +825,7 @@ view.innerHTML = renderTableWithHTML(
       setStatus(`完成：${uploadedFile.name}（工作表：${sheetName}；資料起始列：第 ${startRowIdx + 1} 列）`);
       $("download").disabled = false;
 
-      // bump local counter only after successful analysis
-      const LS_KEY = "kh_tool_use_count_v1";
-      const cur = parseInt(localStorage.getItem(LS_KEY) || "0", 10);
-      localStorage.setItem(LS_KEY, String(cur + 1));
-      $("useCount").textContent = String(cur + 1);
-
+      bumpUseCount();
       render();
     });
 
@@ -859,6 +838,7 @@ view.innerHTML = renderTableWithHTML(
         "核函號碼(J)": r.khNo,
         "核函到期(L)": r.khExpire,
         "入簽/遞補(R)": r.rVal,
+        "移工姓名": r.workerName,
         "到期日期(T)": r.tExpire,
         "狀態": r.status,
         "原因": r.reason
@@ -869,6 +849,7 @@ view.innerHTML = renderTableWithHTML(
         "核函號碼(J)": r.khNo,
         "核函到期(L)": r.khExpire,
         "入簽/遞補(R)": r.rVal,
+        "移工姓名": r.workerName,
         "到期日期(T)": r.tExpire,
         "狀態": r.status,
         "原因": r.reason
@@ -884,6 +865,3 @@ view.innerHTML = renderTableWithHTML(
   </script>
 </body>
 </html>
-
-
-
