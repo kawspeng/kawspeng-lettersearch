@@ -585,20 +585,26 @@
       return String(r).includes("逾期");
     }
 
-    function judgeUsable(L, R, T, today){
-      if (isOverdueR(R)) return { status: "不可用", reason: "R欄標示逾期" };
+    function judgeUsable(L, R, T, today, workerName){
+  // 新增規則：移工姓名有值且不是「未使用」 => 直接排除
+  if (isActuallyUsedByWorker(workerName)){
+    return { status: "不可用", reason: "已被移工使用（移工姓名有值）" };
+  }
 
-      const Ld = parseMinguoDate(L);
-      const Td = parseMinguoDate(T);
+  if (isOverdueR(R)) return { status: "不可用", reason: "R欄標示逾期" };
 
-      if (Td){
-        if (dateOnly(Td) >= today) return { status: "可用", reason: "T欄未到期" };
-        return { status: "不可用", reason: "T欄已到期" };
-      }
+  const Ld = parseMinguoDate(L);
+  const Td = parseMinguoDate(T);
 
-      if (Ld && dateOnly(Ld) >= today) return { status: "可用", reason: "L欄未到期" };
-      return { status: "不可用", reason: "L欄已到期或無有效日期" };
-    }
+  if (Td){
+    if (dateOnly(Td) >= today) return { status: "可用", reason: "T欄未到期" };
+    return { status: "不可用", reason: "T欄已到期" };
+  }
+
+  if (Ld && dateOnly(Ld) >= today) return { status: "可用", reason: "L欄未到期" };
+  return { status: "不可用", reason: "L欄已到期或無有效日期" };
+}
+
 
     // Auto detect start row
     function looksLikeKhNo(v){
@@ -616,7 +622,32 @@
       }
       return 0;
     }
+// ===== 新增：自動找「移工姓名」欄 + 判斷是否已被使用 =====
+function findColumnIndexByHeader(aoa, headerText){
+  const target = String(headerText).trim();
+  const maxRows = Math.min(30, aoa.length);
+  for (let r = 0; r < maxRows; r++){
+    const row = aoa[r] || [];
+    for (let c = 0; c < row.length; c++){
+      const v = row[c];
+      if (v === null || v === undefined) continue;
+      const s = String(v).trim();
+      if (s === target || s.includes(target)) return c;
+    }
+  }
+  return null;
+}
 
+function isActuallyUsedByWorker(nameVal){
+  // 只要包含「未使用」都視為仍可用名額（例如：未使用3人）
+  if (nameVal === null || nameVal === undefined) return false;
+  const s = String(nameVal).trim();
+  if (!s) return false;
+  if (s.includes("未使用")) return false;
+  return true; // 有內容且不是「未使用」 => 視為已被移工使用
+}
+
+    
     // Summary
     function buildSummary(usable){
       const map = new Map();
@@ -756,6 +787,7 @@
       const ws = wb.Sheets[sheetName];
 
       const aoa = XLSX.utils.sheet_to_json(ws, { header: 1, blankrows: false, defval: null });
+      const workerNameCol = findColumnIndexByHeader(aoa, "移工姓名");
       const startRowIdx = detectStartRow(aoa);
       lastStartRow = startRowIdx;
 
@@ -766,11 +798,12 @@
         const L = row[COL.L];
         const R = row[COL.R];
         const T = row[COL.T];
+        const workerName = (workerNameCol !== null) ? row[workerNameCol] : null;
 
         const isAllEmpty = [khNo,L,R,T].every(v => v === null || v === undefined || String(v).trim() === "");
         if (isAllEmpty) continue;
 
-        const judged = judgeUsable(L, R, T, today);
+        const judged = judgeUsable(L, R, T, today, workerName);
 
         rows.push({
           excelRow: i + 1,
@@ -838,4 +871,5 @@
   </script>
 </body>
 </html>
+
 
