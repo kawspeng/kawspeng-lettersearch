@@ -462,10 +462,26 @@
       return new Promise(r => requestAnimationFrame(() => setTimeout(r, 0)));
     }
 
+    async function sniffFileHeader(file){
+  const buf = await file.slice(0, 16).arrayBuffer();
+  const b = new Uint8Array(buf);
+
+  // OLE2 (真正舊版 .xls)
+  const isOLE2 = b[0]===0xD0 && b[1]===0xCF && b[2]===0x11 && b[3]===0xE0;
+
+  // ZIP (.xlsx)
+  const isZIP = b[0]===0x50 && b[1]===0x4B && b[2]===0x03 && b[3]===0x04;
+
+  return { isOLE2, isZIP };
+}
     // ✅ Excel 讀取：先用 ArrayBuffer；舊版/Excel 5.0 解析失敗則 fallback 用 binary
     async function readWorkbookSmart(file){
       if (!window.XLSX) throw new Error("XLSX 套件未載入（可能網路擋 CDN / 離線）。");
+      const sig = await sniffFileHeader(file);
 
+  if (!sig.isOLE2 && !sig.isZIP){
+    throw new Error("此檔案副檔名雖為 .xls，但內容不是標準 Excel 格式。請用 Excel 另存為 .xlsx 後再分析。");
+  }
       // 1) 首選：ArrayBuffer
       try{
         const buf = await file.arrayBuffer();
@@ -870,3 +886,4 @@
   </script>
 </body>
 </html>
+
