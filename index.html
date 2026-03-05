@@ -325,10 +325,10 @@
 
           <div id="status" class="hint">尚未分析</div>
           <div class="hint" style="margin-top:10px; border-color:rgba(251,113,133,.35); background:rgba(251,113,133,.08);">
-  ⚠️ 本工具建議使用新版 Excel（.xlsx）。<br>
-  舊版 Excel（例如 Excel 5.0/95/BIFF）或非標準 .xls 可能無法解析。<br>
-  若解析失敗，請用 Excel 開啟後「另存新檔」為 .xlsx 再匯入。
-</div>
+            ⚠️ 本工具建議使用新版 Excel（.xlsx）。<br>
+            舊版 Excel（例如 Excel 5.0/95/BIFF）或非標準 .xls 可能無法解析。<br>
+            若解析失敗，請用 Excel 開啟後「另存新檔」為 .xlsx 再匯入。
+          </div>
           <div class="hint">
             <strong>判斷規則</strong>：R 含「逾期」→ 不可用；若 T 有日期則以 T 判斷是否到期（優先於 L）；T 無日期則以 L 判斷。<br>
             <strong>新增規則</strong>：若「移工姓名」有值且不含「未使用」→ 視為已被使用，排除於可用清單（並在不可用顯示姓名）。
@@ -404,28 +404,23 @@
     const COL = { J: 9, L: 11, R: 17, T: 19 };
 
     let uploadedFile = null;
-    let rows = [];
-    let usableRows = [];
-    let unusableRows = [];
-    let summaryRows = [];
+    let rows = [], usableRows = [], unusableRows = [], summaryRows = [];
     let activeTab = "usable";
-    let lastStartRow = null;
-    let lastSheetName = null;
+    let lastStartRow = null, lastSheetName = null;
 
     const $ = (id) => document.getElementById(id);
 
     // Use count (local only)
     const LS_KEY = "kh_tool_use_count_v1";
-    function getUseCount(){ return parseInt(localStorage.getItem(LS_KEY) || "0", 10); }
-    function setUseCount(v){ localStorage.setItem(LS_KEY, String(v)); $("useCount").textContent = String(v); }
-    function bumpUseCount(){ setUseCount(getUseCount() + 1); }
+    const getUseCount = ()=> parseInt(localStorage.getItem(LS_KEY) || "0", 10);
+    const setUseCount = (v)=> (localStorage.setItem(LS_KEY, String(v)), $("useCount").textContent = String(v));
+    const bumpUseCount = ()=> setUseCount(getUseCount() + 1);
     setUseCount(getUseCount());
     $("resetCount").addEventListener("click", ()=> setUseCount(0));
 
     // Init today
     (function initToday(){
-      const d = new Date();
-      const pad = (n) => String(n).padStart(2,"0");
+      const d = new Date(), pad = (n)=> String(n).padStart(2,"0");
       $("today").value = `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`;
     })();
 
@@ -448,70 +443,54 @@
       if (fileInput.files?.length) setFile(fileInput.files[0]);
     });
 
-    function setPicked(msg){ $("picked").textContent = msg || ""; }
-    function setStatus(msg){ $("status").textContent = msg || ""; }
+    const setPicked = (msg)=> $("picked").textContent = msg || "";
+    const setStatus = (msg)=> $("status").textContent = msg || "";
 
     async function setFile(file){
-  if (!file || !file.name.match(/\.(xlsx|xls)$/i)){
-    alert("請選擇 Excel 檔案（.xlsx / .xls）");
-    return;
-  }
+      if (!file || !file.name.match(/\.(xlsx|xls)$/i)){
+        alert("請選擇 Excel 檔案（.xlsx / .xls）");
+        return;
+      }
 
-  uploadedFile = file;
-  setPicked(`已選擇：${file.name}`);
+      uploadedFile = file;
+      setPicked(`已選擇：${file.name}`);
 
-  // 如果是新版 .xlsx
-  if (/\.(xlsx)$/i.test(file.name)){
-    setStatus("已載入檔案（.xlsx），請按「開始分析」。");
-    return;
-  }
+      if (/\.(xlsx)$/i.test(file.name)){
+        setStatus("已載入檔案（.xlsx），請按「開始分析」。");
+        return;
+      }
 
-  // 如果是 .xls → 立即提醒
-  setStatus("⚠️ 已載入 .xls（舊版格式可能無法解析）。建議另存為 .xlsx 後再分析。");
-
-  alert(
-    "⚠️ 你選的是 .xls（舊版 Excel 格式）。\n\n" +
-    "若為 Excel 5.0/95/BIFF 活頁簿，瀏覽器端可能無法解析。\n" +
-    "建議用 Excel 開啟後「另存新檔」為 .xlsx 再匯入。"
-  );
-}
-
-    // ✅ 讓 UI 先更新（避免看起來「卡住」）
-    function yieldToUI(){
-      return new Promise(r => requestAnimationFrame(() => setTimeout(r, 0)));
+      setStatus("⚠️ 已載入 .xls（舊版格式可能無法解析）。建議另存為 .xlsx 後再分析。");
+      alert(
+        "⚠️ 你選的是 .xls（舊版 Excel 格式）。\n\n" +
+        "若為 Excel 5.0/95/BIFF 活頁簿，瀏覽器端可能無法解析。\n" +
+        "建議用 Excel 開啟後「另存新檔」為 .xlsx 再匯入。"
+      );
     }
 
+    // ✅ 讓 UI 先更新（避免看起來卡住）
+    const yieldToUI = ()=> new Promise(r => requestAnimationFrame(() => setTimeout(r, 0)));
+
     async function sniffFileHeader(file){
-  const buf = await file.slice(0, 16).arrayBuffer();
-  const b = new Uint8Array(buf);
+      const buf = await file.slice(0, 16).arrayBuffer();
+      const b = new Uint8Array(buf);
+      const isOLE2 = b[0]===0xD0 && b[1]===0xCF && b[2]===0x11 && b[3]===0xE0; // OLE2 (.xls)
+      const isZIP  = b[0]===0x50 && b[1]===0x4B && b[2]===0x03 && b[3]===0x04; // ZIP (.xlsx)
+      return { isOLE2, isZIP };
+    }
 
-  // OLE2 (真正舊版 .xls)
-  const isOLE2 = b[0]===0xD0 && b[1]===0xCF && b[2]===0x11 && b[3]===0xE0;
-
-  // ZIP (.xlsx)
-  const isZIP = b[0]===0x50 && b[1]===0x4B && b[2]===0x03 && b[3]===0x04;
-
-  return { isOLE2, isZIP };
-}
-    // ✅ Excel 讀取：先用 ArrayBuffer；舊版/Excel 5.0 解析失敗則 fallback 用 binary
+    // ✅ Excel 讀取：ArrayBuffer 失敗則 fallback 用 binary
     async function readWorkbookSmart(file){
       if (!window.XLSX) throw new Error("XLSX 套件未載入（可能網路擋 CDN / 離線）。");
       const sig = await sniffFileHeader(file);
+      if (!sig.isOLE2 && !sig.isZIP){
+        throw new Error("此檔案副檔名雖為 .xls，但內容不是標準 Excel 格式。請用 Excel 另存為 .xlsx 後再分析。");
+      }
 
-  if (!sig.isOLE2 && !sig.isZIP){
-    throw new Error("此檔案副檔名雖為 .xls，但內容不是標準 Excel 格式。請用 Excel 另存為 .xlsx 後再分析。");
-  }
-      // 1) 首選：ArrayBuffer
       try{
         const buf = await file.arrayBuffer();
-        return XLSX.read(buf, {
-          type: "array",
-          cellDates: true,
-          codepage: 950,
-          dense: true
-        });
+        return XLSX.read(buf, { type:"array", cellDates:true, codepage:950, dense:true });
       }catch(e1){
-        // 2) Fallback：binary string（對部分舊 .xls/Excel 5.0 更穩）
         try{
           const bin = await new Promise((resolve, reject)=>{
             const fr = new FileReader();
@@ -519,16 +498,10 @@
             fr.onload = () => resolve(fr.result);
             fr.readAsBinaryString(file);
           });
-
-          return XLSX.read(bin, {
-            type: "binary",
-            cellDates: true,
-            codepage: 950,
-            dense: true
-          });
+          return XLSX.read(bin, { type:"binary", cellDates:true, codepage:950, dense:true });
         }catch(e2){
           throw new Error(
-            "此 .xls 可能是非常舊的格式（Excel 5.0/BIFF）或內容異常，解析失敗。建議另存新檔為 .xlsx，或把錯誤訊息提供以便調整。\n" +
+            "此 .xls 可能是非常舊的格式（Excel 5.0/BIFF）或內容異常，解析失敗。建議另存新檔為 .xlsx。\n" +
             "Array 失敗：" + (e1?.message || e1) + "\n" +
             "Binary 失敗：" + (e2?.message || e2)
           );
@@ -618,39 +591,32 @@
       return null;
     }
 
-    function dateOnly(d){ return new Date(d.getFullYear(), d.getMonth(), d.getDate()); }
-    function fmtDate(d){
+    const dateOnly = (d)=> new Date(d.getFullYear(), d.getMonth(), d.getDate());
+    const fmtDate = (d)=>{
       if (!d) return "";
-      const pad = (n) => String(n).padStart(2,"0");
+      const pad = (n)=> String(n).padStart(2,"0");
       return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`;
-    }
+    };
 
     // Rules
-    function isOverdueR(r){
-      if (r === null || r === undefined) return false;
-      return String(r).includes("逾期");
-    }
+    const isOverdueR = (r)=> (r !== null && r !== undefined && String(r).includes("逾期"));
 
     // ✅ 核心判斷：加入「已使用」排除，且 reason 直接帶姓名
     function judgeUsable(L, R, T, today, workerName){
       const who = normalizeWorkerName(workerName);
-
-      if (who){
-        return { status: "不可用", reason: `已被移工使用：${who}` };
-      }
-
-      if (isOverdueR(R)) return { status: "不可用", reason: "R欄標示逾期" };
+      if (who) return { status:"不可用", reason:`已被移工使用：${who}` };
+      if (isOverdueR(R)) return { status:"不可用", reason:"R欄標示逾期" };
 
       const Ld = parseMinguoDate(L);
       const Td = parseMinguoDate(T);
 
       if (Td){
-        if (dateOnly(Td) >= today) return { status: "可用", reason: "T欄未到期" };
-        return { status: "不可用", reason: "T欄已到期" };
+        if (dateOnly(Td) >= today) return { status:"可用", reason:"T欄未到期" };
+        return { status:"不可用", reason:"T欄已到期" };
       }
 
-      if (Ld && dateOnly(Ld) >= today) return { status: "可用", reason: "L欄未到期" };
-      return { status: "不可用", reason: "L欄已到期或無有效日期" };
+      if (Ld && dateOnly(Ld) >= today) return { status:"可用", reason:"L欄未到期" };
+      return { status:"不可用", reason:"L欄已到期或無有效日期" };
     }
 
     // Auto detect start row
@@ -700,19 +666,62 @@
       return `<table><thead><tr>${th}</tr></thead><tbody>${trs}</tbody></table>`;
     }
 
-    // Search
+    // ===== TAB config：集中分頁欄位、資料、列渲染（縮短 render）=====
+    const TAB = {
+      usable: {
+        title: "可用清單",
+        cols: ["狀態","核函號碼(J)","核函到期(L)","入簽/遞補(R)","到期日期(T)","Excel列號","原因"],
+        list: ()=> usableRows,
+        make: (r)=>({
+          "狀態": `<span class="statusPill ok">可用</span>`,
+          "核函號碼(J)": `<span class="code">${escapeHtml(r.khNo)}</span>`,
+          "核函到期(L)": escapeHtml(r.khExpire),
+          "入簽/遞補(R)": escapeHtml(r.rVal),
+          "到期日期(T)": escapeHtml(r.tExpire),
+          "Excel列號": `<span class="mono num">${escapeHtml(r.excelRow)}</span>`,
+          "原因": escapeHtml(r.reason)
+        })
+      },
+      unusable: {
+        title: "不可用",
+        cols: ["狀態","核函號碼(J)","核函到期(L)","入簽/遞補(R)","移工姓名","到期日期(T)","Excel列號","原因"],
+        list: ()=> unusableRows,
+        make: (r)=>({
+          "狀態": `<span class="statusPill bad">不可用</span>`,
+          "核函號碼(J)": `<span class="code">${escapeHtml(r.khNo)}</span>`,
+          "核函到期(L)": escapeHtml(r.khExpire),
+          "入簽/遞補(R)": escapeHtml(r.rVal),
+          "移工姓名": escapeHtml(normalizeWorkerName(r.workerName)),
+          "到期日期(T)": escapeHtml(r.tExpire),
+          "Excel列號": `<span class="mono num">${escapeHtml(r.excelRow)}</span>`,
+          "原因": escapeHtml(r.reason)
+        })
+      },
+      summary: {
+        title: "核函彙總",
+        cols: ["核函號碼","可用筆數"],
+        list: ()=> summaryRows.map(s=>({
+          khNo: s.核函號碼,
+          cnt: s.可用筆數,
+          searchBlob: `${s.核函號碼}|${s.可用筆數}`.toLowerCase()
+        })),
+        make: (x)=>({
+          "核函號碼": `<span class="code">${escapeHtml(x.khNo)}</span>`,
+          "可用筆數": `<span class="mono num">${escapeHtml(x.cnt)}</span>`
+        })
+      }
+    };
+
+    // Search（short + fast）
     function applySearch(list){
       const q = $("q").value.trim().toLowerCase();
       if (!q) return list;
-      return list.filter(r=>{
-        return [r.khNo, r.khExpire, r.rVal, r.tExpire, r.status, r.reason, r.workerName, r.excelRow]
-          .some(x => String(x ?? "").toLowerCase().includes(q));
-      });
+      return list.filter(r => (r.searchBlob || "").includes(q));
     }
 
     function setTableHeader(){
-      const titleMap = { usable:"可用清單", unusable:"不可用", summary:"核函彙總" };
-      $("tableTitle").textContent = titleMap[activeTab] || "結果";
+      const cfg = TAB[activeTab];
+      $("tableTitle").textContent = cfg?.title || "結果";
       const meta = [];
       if (lastSheetName) meta.push(`工作表：${lastSheetName}`);
       if (lastStartRow !== null) meta.push(`資料起始列：第 ${lastStartRow + 1} 列`);
@@ -722,59 +731,10 @@
     function render(){
       setTableHeader();
       const view = $("view");
-
-      if (activeTab === "usable"){
-        const data = applySearch(usableRows).map(r=>({
-          "狀態": `<span class="statusPill ok">可用</span>`,
-          "核函號碼(J)": `<span class="code">${escapeHtml(r.khNo)}</span>`,
-          "核函到期(L)": escapeHtml(r.khExpire),
-          "入簽/遞補(R)": escapeHtml(r.rVal),
-          "到期日期(T)": escapeHtml(r.tExpire),
-          "Excel列號": `<span class="mono num">${escapeHtml(r.excelRow)}</span>`,
-          "原因": escapeHtml(r.reason)
-        }));
-        view.innerHTML = renderTableWithHTML(
-          data,
-          ["狀態","核函號碼(J)","核函到期(L)","入簽/遞補(R)","到期日期(T)","Excel列號","原因"]
-        );
-        return;
-      }
-
-      if (activeTab === "unusable"){
-        const data = applySearch(unusableRows).map(r=>{
-          const showName = normalizeWorkerName(r.workerName);
-          return {
-            "狀態": `<span class="statusPill bad">不可用</span>`,
-            "核函號碼(J)": `<span class="code">${escapeHtml(r.khNo)}</span>`,
-            "核函到期(L)": escapeHtml(r.khExpire),
-            "入簽/遞補(R)": escapeHtml(r.rVal),
-            "移工姓名": escapeHtml(showName),
-            "到期日期(T)": escapeHtml(r.tExpire),
-            "Excel列號": `<span class="mono num">${escapeHtml(r.excelRow)}</span>`,
-            "原因": escapeHtml(r.reason)
-          };
-        });
-
-        view.innerHTML = renderTableWithHTML(
-          data,
-          ["狀態","核函號碼(J)","核函到期(L)","入簽/遞補(R)","移工姓名","到期日期(T)","Excel列號","原因"]
-        );
-        return;
-      }
-
-      if (activeTab === "summary"){
-        const q = $("q").value.trim().toLowerCase();
-        let list = summaryRows.map(s=>({ khNo:s.核函號碼, cnt:s.可用筆數 }));
-        if (q){
-          list = list.filter(x => [x.khNo, x.cnt].some(v=> String(v).toLowerCase().includes(q)));
-        }
-        const data = list.map(x=>({
-          "核函號碼": `<span class="code">${escapeHtml(x.khNo)}</span>`,
-          "可用筆數": `<span class="mono num">${escapeHtml(x.cnt)}</span>`
-        }));
-        view.innerHTML = renderTableWithHTML(data, ["核函號碼","可用筆數"]);
-        return;
-      }
+      const cfg = TAB[activeTab];
+      if (!cfg){ view.innerHTML = `<div class="muted" style="padding:16px">尚未分析</div>`; return; }
+      const data = applySearch(cfg.list()).map(cfg.make);
+      view.innerHTML = renderTableWithHTML(data, cfg.cols);
     }
 
     // Tabs
@@ -786,7 +746,13 @@
         render();
       });
     });
-    $("q").addEventListener("input", ()=> render());
+
+    // 搜尋加 debounce（避免每按一鍵就重繪）
+    let qTimer = null;
+    $("q").addEventListener("input", ()=>{
+      clearTimeout(qTimer);
+      qTimer = setTimeout(render, 150);
+    });
 
     // Analyze
     $("analyze").addEventListener("click", async ()=>{
@@ -799,7 +765,7 @@
 
       try{
         setStatus("解析中…");
-        await yieldToUI(); // ✅ 先更新畫面
+        await yieldToUI();
 
         const todayStr = $("today").value;
         const today = todayStr ? dateOnly(new Date(todayStr)) : dateOnly(new Date());
@@ -819,7 +785,6 @@
 
         rows = [];
 
-        // ✅ 大檔案可避免 UI 卡死：每 500 列讓 UI 喘一下
         for (let i = startRowIdx; i < aoa.length; i++){
           const row = aoa[i] || [];
 
@@ -834,7 +799,7 @@
 
           const judged = judgeUsable(L, R, T, today, workerName);
 
-          rows.push({
+          const rowObj = {
             excelRow: i + 1,
             khNo: khNo ?? "",
             khExpire: fmtDate(parseMinguoDate(L)),
@@ -843,13 +808,21 @@
             tExpire: fmtDate(parseMinguoDate(T)),
             status: judged.status,
             reason: judged.reason
-          });
+          };
+
+          // ✅ precomputed search text
+          rowObj.searchBlob = [
+            rowObj.khNo, rowObj.khExpire, rowObj.rVal, rowObj.workerName,
+            rowObj.tExpire, rowObj.status, rowObj.reason, rowObj.excelRow
+          ].join("|").toLowerCase();
+
+          rows.push(rowObj);
 
           if ((i - startRowIdx) % 500 === 0) await yieldToUI();
         }
 
-        usableRows = rows.filter(r=>r.status==="可用");
-        unusableRows = rows.filter(r=>r.status!=="可用");
+        usableRows = rows.filter(r=> r.status === "可用");
+        unusableRows = rows.filter(r=> r.status !== "可用");
         summaryRows = buildSummary(usableRows);
 
         $("kpiUsable").textContent = String(usableRows.length);
@@ -869,31 +842,25 @@
       }
     });
 
-    // Download (optional)
+    // Download (optional) - remove duplicate mapping
+    function toExportRow(r){
+      return {
+        "Excel列號": r.excelRow,
+        "核函號碼(J)": r.khNo,
+        "核函到期(L)": r.khExpire,
+        "入簽/遞補(R)": r.rVal,
+        "移工姓名": r.workerName,
+        "到期日期(T)": r.tExpire,
+        "狀態": r.status,
+        "原因": r.reason
+      };
+    }
+
     $("download").addEventListener("click", ()=>{
       if (!rows.length) return;
 
-      const all = rows.map(r=>({
-        "Excel列號": r.excelRow,
-        "核函號碼(J)": r.khNo,
-        "核函到期(L)": r.khExpire,
-        "入簽/遞補(R)": r.rVal,
-        "移工姓名": r.workerName,
-        "到期日期(T)": r.tExpire,
-        "狀態": r.status,
-        "原因": r.reason
-      }));
-
-      const usable = usableRows.map(r=>({
-        "Excel列號": r.excelRow,
-        "核函號碼(J)": r.khNo,
-        "核函到期(L)": r.khExpire,
-        "入簽/遞補(R)": r.rVal,
-        "移工姓名": r.workerName,
-        "到期日期(T)": r.tExpire,
-        "狀態": r.status,
-        "原因": r.reason
-      }));
+      const all = rows.map(toExportRow);
+      const usable = usableRows.map(toExportRow);
 
       const wb = XLSX.utils.book_new();
       XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(summaryRows), "核函彙總");
@@ -905,5 +872,3 @@
   </script>
 </body>
 </html>
-
-
