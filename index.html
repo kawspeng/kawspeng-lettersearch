@@ -295,7 +295,7 @@
       <div class="card">
         <div class="hd">
           <div class="title">上傳與分析</div>
-          <div class="mini">欄位：<b>B</b>=客戶名稱、<b>J</b>=核函號碼、<b>L</b>=核函到期、<b>R</b>=入簽/遞補、<b>T</b>=到期日期</div>
+          <div class="mini">欄位：<b>B</b>=客戶名稱、<b>Q</b>=招募別、<b>J</b>=核函號碼、<b>L</b>=核函到期、<b>R</b>=入簽/遞補、<b>T</b>=到期日期</div>
         </div>
         <div class="bd">
           <div id="dropzone" class="dropzone" role="button" aria-label="上傳 Excel" tabindex="0">
@@ -366,7 +366,7 @@
           </div>
 
           <div class="row" style="margin-top:14px">
-            <input id="q" type="text" placeholder="搜尋：客戶名稱 / 核函號碼 / 移工姓名 / 原因…" style="width:100%" />
+            <input id="q" type="text" placeholder="搜尋：客戶名稱 / 招募別 / 核函號碼 / 移工姓名 / 原因…" style="width:100%" />
           </div>
 
           <div class="hint" style="margin-top:14px">
@@ -401,7 +401,7 @@
 
   <script>
     // 固定欄位（0-based index）
-    const COL = { B: 1, J: 9, L: 11, R: 17, T: 19 };
+    const COL = { B: 1, Q: 16, J: 9, L: 11, R: 17, T: 19 };
 
     let uploadedFile = null;
     let rows = [], usableRows = [], unusableRows = [], summaryRows = [];
@@ -670,11 +670,12 @@
     const TAB = {
       usable: {
   title: "可用清單",
-  cols: ["狀態","客戶名稱(B)","核函號碼(J)","核函到期(L)","入簽/遞補(R)","到期日期(T)","Excel列號","原因"],
+  cols: ["狀態","客戶名稱(B)","招募別(Q)","核函號碼(J)","核函到期(L)","入簽/遞補(R)","到期日期(T)","Excel列號","原因"],
   list: ()=> usableRows,
   make: (r)=>({
     "狀態": `<span class="statusPill ok">可用</span>`,
     "客戶名稱(B)": escapeHtml(r.customerName),
+    "招募別(Q)": escapeHtml(r.recruitType),
     "核函號碼(J)": `<span class="code">${escapeHtml(r.khNo)}</span>`,
     "核函到期(L)": escapeHtml(r.khExpire),
     "入簽/遞補(R)": escapeHtml(r.rVal),
@@ -685,11 +686,12 @@
 },
       unusable: {
   title: "不可用",
-  cols: ["狀態","客戶名稱(B)","核函號碼(J)","核函到期(L)","入簽/遞補(R)","移工姓名","到期日期(T)","Excel列號","原因"],
+  cols: ["狀態","客戶名稱(B)","招募別(Q)","核函號碼(J)","核函到期(L)","入簽/遞補(R)","移工姓名","到期日期(T)","Excel列號","原因"],
   list: ()=> unusableRows,
   make: (r)=>({
     "狀態": `<span class="statusPill bad">不可用</span>`,
     "客戶名稱(B)": escapeHtml(r.customerName),
+    "招募別(Q)": escapeHtml(r.recruitType),
     "核函號碼(J)": `<span class="code">${escapeHtml(r.khNo)}</span>`,
     "核函到期(L)": escapeHtml(r.khExpire),
     "入簽/遞補(R)": escapeHtml(r.rVal),
@@ -791,13 +793,14 @@
           const row = aoa[i] || [];
 
           const customerName = row[COL.B];
+          const recruitType = row[COL.Q];
           const khNo = row[COL.J];
           const L = row[COL.L];
           const R = row[COL.R];
           const T = row[COL.T];
           const workerName = (workerNameCol !== null) ? row[workerNameCol] : null;
 
-          const isAllEmpty = [customerName, khNo, L, R, T, workerName].every(v => v === null || v === undefined || String(v).trim() === "");
+          const isAllEmpty = [customerName, recruitType, khNo, L, R, T, workerName].every(v => v === null || v === undefined || String(v).trim() === "");
           if (isAllEmpty) continue;
 
           const judged = judgeUsable(L, R, T, today, workerName);
@@ -805,6 +808,7 @@
           const rowObj = {
   excelRow: i + 1,
   customerName: customerName ?? "",
+  recruitType: recruitType ?? "",
   khNo: khNo ?? "",
   khExpire: fmtDate(parseMinguoDate(L)),
   rVal: R ?? "",
@@ -816,7 +820,7 @@
 
           // ✅ precomputed search text
           rowObj.searchBlob = [
-  rowObj.customerName, rowObj.khNo, rowObj.khExpire, rowObj.rVal, rowObj.workerName,
+  rowObj.customerName, rowObj.recruitType, rowObj.khNo, rowObj.khExpire, rowObj.rVal, rowObj.workerName,
   rowObj.tExpire, rowObj.status, rowObj.reason, rowObj.excelRow
 ].join("|").toLowerCase();
 
@@ -851,6 +855,7 @@
   return {
     "Excel列號": r.excelRow,
     "客戶名稱(B)": r.customerName,
+    "招募別(Q)": r.recruitType,
     "核函號碼(J)": r.khNo,
     "核函到期(L)": r.khExpire,
     "入簽/遞補(R)": r.rVal,
@@ -877,4 +882,5 @@
   </script>
 </body>
 </html>
+
 
